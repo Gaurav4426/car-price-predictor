@@ -9,7 +9,7 @@ st.set_page_config(page_title="Car Price Predictor", page_icon="🚗")
 st.title("🚗 Car Price Prediction System")
 
 # ==============================
-# DATA GENERATION (SAME AS YOUR CODE)
+# DATA GENERATION
 # ==============================
 
 data=[]
@@ -39,7 +39,7 @@ for _ in range(150):
     brand=np.random.choice(brands_sh)
     model=np.random.choice(models_sh[brand])
 
-    year=np.random.randint(2010,2027)
+    year=np.random.randint(2010,2026)
     km=np.random.randint(5000,180000)
     mileage=np.random.uniform(10,25)
     engine=np.random.randint(800,2500)
@@ -67,46 +67,41 @@ for _ in range(150):
     price=max(price,50000)
 
     data.append([
-        0,brand,model,year,km,mileage,engine,
-        insurance,transmission,fuel,
-        0,0,0,0,'Black','No',price
+        brand,model,year,km,mileage,engine,
+        insurance,transmission,fuel,price
     ])
 
+df=pd.DataFrame(data,columns=[
+'brand','model','year','km','mileage','engine',
+'insurance','transmission','fuel','price'
+])
+
 # ==============================
-# DATAFRAME + ENCODING
+# 🔥 SAFE ENCODING (FINAL FIX)
 # ==============================
 
-columns=[
-'car_type','brand','model','year','km_driven','mileage','engine_cc',
-'insurance','transmission','fuel_type',
-'engine_power','interior','safety','custom_paint',
-'color','sunroof','price'
-]
+df_encoded = pd.get_dummies(df)
 
-df=pd.DataFrame(data,columns=columns)
+X = df_encoded.drop('price', axis=1)
+y = df_encoded['price']
 
-df_encoded=df.copy()
+# ==============================
+# MODEL
+# ==============================
 
-for col in df_encoded.columns:
-    if df_encoded[col].dtype=='object':
-        df_encoded[col]=df_encoded[col].astype('category').cat.codes
-
-X=df_encoded.drop('price',axis=1)
-y=df_encoded['price']
-
-model=RandomForestRegressor(n_estimators=100,random_state=42)
-model.fit(X,y)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 
 # ==============================
 # UI
 # ==============================
 
-st.subheader("Select Car Details")
+st.subheader("Enter Car Details")
 
 brand = st.selectbox("Brand", brands_sh)
 model_name = st.selectbox("Model", models_sh[brand])
 
-year = st.slider("Year", 2010, 2026, 2020)
+year = st.slider("Year", 2010, 2025, 2020)
 km = st.number_input("KM Driven", 0, 200000, 50000)
 mileage = st.number_input("Mileage", 10.0, 30.0, 18.0)
 engine = st.number_input("Engine CC", 800, 2500, 1200)
@@ -116,36 +111,35 @@ transmission = st.selectbox("Transmission", trans_sh)
 fuel = st.selectbox("Fuel Type", fuel_sh)
 
 # ==============================
-# ENCODING INPUT (IMPORTANT)
+# INPUT ENCODING
 # ==============================
 
-brand_code = brands_sh.index(brand)
-model_code = models_sh[brand].index(model_name)
-trans_code = trans_sh.index(transmission)
-fuel_code = fuel_sh.index(fuel)
+input_dict = {
+    'brand': brand,
+    'model': model_name,
+    'year': year,
+    'km': km,
+    'mileage': mileage,
+    'engine': engine,
+    'insurance': insurance,
+    'transmission': transmission,
+    'fuel': fuel
+}
 
-input_data=[
-    0,
-    brand_code,
-    model_code,
-    year,
-    km,
-    mileage,
-    engine,
-    insurance,
-    trans_code,
-    fuel_code,
-    0,0,0,0,0,0
-]
+input_df = pd.DataFrame([input_dict])
 
-input_df=pd.DataFrame([input_data],columns=X.columns)
+# apply SAME encoding
+input_encoded = pd.get_dummies(input_df)
+
+# match columns
+input_encoded = input_encoded.reindex(columns=X.columns, fill_value=0)
 
 # ==============================
 # PREDICTION
 # ==============================
 
 if st.button("Predict Price"):
-    pred=model.predict(input_df)[0]
+    pred = model.predict(input_encoded)[0]
 
     st.success(f"💰 Estimated Price: ₹ {int(pred)}")
     st.info(f"📊 Range: ₹ {int(pred*0.9)} - ₹ {int(pred*1.1)}")
