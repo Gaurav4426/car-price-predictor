@@ -5,48 +5,8 @@ from sklearn.ensemble import RandomForestRegressor
 
 np.random.seed(42)
 
-st.set_page_config(page_title="Car Price Predictor", page_icon="🚗", layout="wide")
-
+st.set_page_config(page_title="Car Price Predictor", page_icon="🚗")
 st.title("🚗 Car Price Prediction System")
-st.markdown("### AI-based Used Car Valuation with Auto Images & Comparison")
-
-# ==============================
-# BRANDS + MODELS
-# ==============================
-
-brands = [
-    'Maruti','Hyundai','Tata','Honda','Toyota',
-    'BMW','Audi','Porsche'
-]
-
-models = {
-'Maruti':['Swift','Baleno','WagonR','Dzire','Brezza'],
-'Hyundai':['i20','Creta','Venue','Verna','Grand i10'],
-'Tata':['Nexon','Punch','Harrier','Tiago','Altroz'],
-'Honda':['City','Amaze','Jazz','WRV','Civic'],
-'Toyota':['Innova','Fortuner','Glanza','Etios','Corolla'],
-'BMW':['3 Series','5 Series','X1'],
-'Audi':['A4','A6','Q3'],
-'Porsche':['Macan','Cayenne']
-}
-
-# ==============================
-# BASE PRICES
-# ==============================
-
-base_price_dict = {
-'Swift':600000,'Baleno':750000,'WagonR':550000,'Dzire':700000,'Brezza':900000,
-'i20':800000,'Creta':1500000,'Venue':1200000,'Verna':1400000,'Grand i10':650000,
-'Nexon':1100000,'Punch':850000,'Harrier':1900000,'Tiago':600000,'Altroz':850000,
-'City':1300000,'Amaze':850000,'Jazz':900000,'WRV':1100000,'Civic':1800000,
-'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000,
-'3 Series':6000000,'5 Series':9000000,'X1':4500000,
-'A4':5500000,'A6':8000000,'Q3':4500000,
-'Macan':9000000,'Cayenne':15000000
-}
-
-fuel_types=['Petrol','Diesel','Petrol+CNG','Electric']
-transmissions=['Manual','Automatic']
 
 # ==============================
 # DATA GENERATION
@@ -54,9 +14,30 @@ transmissions=['Manual','Automatic']
 
 data=[]
 
-for _ in range(300):
-    brand=np.random.choice(brands)
-    model=np.random.choice(models[brand])
+brands_sh=['Maruti','Hyundai','Tata','Honda','Toyota']
+
+models_sh = {
+'Maruti':['Swift','Baleno','WagonR','Dzire','Brezza'],
+'Hyundai':['i20','Creta','Venue','Verna','Grand i10'],
+'Tata':['Nexon','Punch','Harrier','Tiago','Altroz'],
+'Honda':['City','Amaze','Jazz','WRV','Civic'],
+'Toyota':['Innova','Fortuner','Glanza','Etios','Corolla']
+}
+
+model_price_sh = {
+'Swift':600000,'Baleno':750000,'WagonR':550000,'Dzire':700000,'Brezza':900000,
+'i20':800000,'Creta':1500000,'Venue':1200000,'Verna':1400000,'Grand i10':650000,
+'Nexon':1100000,'Punch':850000,'Harrier':1900000,'Tiago':600000,'Altroz':850000,
+'City':1300000,'Amaze':850000,'Jazz':900000,'WRV':1100000,'Civic':1800000,
+'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000
+}
+
+fuel_sh=['Petrol','Diesel','Petrol+CNG','Electric']
+trans_sh=['Manual','Automatic']
+
+for _ in range(150):
+    brand=np.random.choice(brands_sh)
+    model=np.random.choice(models_sh[brand])
 
     year=np.random.randint(2010,2026)
     km=np.random.randint(5000,180000)
@@ -64,21 +45,23 @@ for _ in range(300):
     engine=np.random.randint(800,2500)
 
     insurance=np.random.choice([0,1])
-    transmission=np.random.choice(transmissions)
-    fuel=np.random.choice(fuel_types)
+    transmission=np.random.choice(trans_sh)
+    fuel=np.random.choice(fuel_sh)
 
-    base_price = base_price_dict.get(model, 800000)
+    base_price=model_price_sh[model]
+
+    age_penalty=(2026-year)*40000
+    km_penalty=km*3
 
     price=(
         base_price
-        -(2026-year)*50000
-        -km*3
-        +engine*4
-        +mileage*1000
+        -age_penalty
+        -km_penalty
+        +(25000 if transmission=='Automatic' else 0)
+        +(60000 if fuel=='Electric' else 20000 if fuel=='Petrol+CNG' else 0)
         +insurance*20000
-        +(30000 if transmission=='Automatic' else 0)
-        +(30000 if fuel=='Petrol+CNG' else 0)
-        +(50000 if fuel=='Electric' else 0)
+        +engine*4
+        +mileage*2000
     )
 
     price=max(price,50000)
@@ -94,10 +77,11 @@ df=pd.DataFrame(data,columns=[
 ])
 
 # ==============================
-# ENCODING
+# 🔥 SAFE ENCODING (FINAL FIX)
 # ==============================
 
 df_encoded = pd.get_dummies(df)
+
 X = df_encoded.drop('price', axis=1)
 y = df_encoded['price']
 
@@ -105,117 +89,57 @@ y = df_encoded['price']
 # MODEL
 # ==============================
 
-model_ml = RandomForestRegressor(n_estimators=100, random_state=42)
-model_ml.fit(X, y)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 
 # ==============================
-# AUTO IMAGE FUNCTION
+# UI
 # ==============================
 
-def get_car_images(brand, model):
-    query = f"{brand} {model} car"
-    return [
-        f"https://source.unsplash.com/600x400/?{query.replace(' ', ',')}",
-        f"https://source.unsplash.com/600x400/?car,{model}",
-        f"https://source.unsplash.com/600x400/?car,{brand}"
-    ]
+st.subheader("Enter Car Details")
+
+brand = st.selectbox("Brand", brands_sh)
+model_name = st.selectbox("Model", models_sh[brand])
+
+year = st.slider("Year", 2010, 2025, 2020)
+km = st.number_input("KM Driven", 0, 200000, 50000)
+mileage = st.number_input("Mileage", 10.0, 30.0, 18.0)
+engine = st.number_input("Engine CC", 800, 2500, 1200)
+
+insurance = st.selectbox("Insurance", [0,1])
+transmission = st.selectbox("Transmission", trans_sh)
+fuel = st.selectbox("Fuel Type", fuel_sh)
 
 # ==============================
-# TABS
+# INPUT ENCODING
 # ==============================
 
-tab1, tab2 = st.tabs(["🔍 Predict Price", "⚖️ Compare Cars"])
+input_dict = {
+    'brand': brand,
+    'model': model_name,
+    'year': year,
+    'km': km,
+    'mileage': mileage,
+    'engine': engine,
+    'insurance': insurance,
+    'transmission': transmission,
+    'fuel': fuel
+}
+
+input_df = pd.DataFrame([input_dict])
+
+# apply SAME encoding
+input_encoded = pd.get_dummies(input_df)
+
+# match columns
+input_encoded = input_encoded.reindex(columns=X.columns, fill_value=0)
 
 # ==============================
-# TAB 1
+# PREDICTION
 # ==============================
 
-with tab1:
-    col1, col2 = st.columns(2)
+if st.button("Predict Price"):
+    pred = model.predict(input_encoded)[0]
 
-    with col1:
-        brand = st.selectbox("Brand", brands)
-        model_name = st.selectbox("Model", models[brand])
-
-        st.subheader("🚗 Car Preview")
-
-        with st.spinner("Loading images..."):
-            image_urls = get_car_images(brand, model_name)
-
-        img_cols = st.columns(3)
-        for i, url in enumerate(image_urls):
-            img_cols[i].image(url, use_container_width=True)
-
-    with col2:
-        year = st.slider("Year", 2010, 2025, 2020)
-        km = st.number_input("KM Driven", 0, 200000, 50000)
-        mileage = st.number_input("Mileage", 10.0, 30.0, 18.0)
-        engine = st.number_input("Engine CC", 800, 2500, 1200)
-
-        insurance = st.selectbox("Insurance", [0,1])
-        transmission = st.selectbox("Transmission", transmissions)
-        fuel = st.selectbox("Fuel Type", fuel_types)
-
-    input_df=pd.DataFrame([{
-        'brand':brand,
-        'model':model_name,
-        'year':year,
-        'km':km,
-        'mileage':mileage,
-        'engine':engine,
-        'insurance':insurance,
-        'transmission':transmission,
-        'fuel':fuel
-    }])
-
-    input_encoded=pd.get_dummies(input_df)
-    input_encoded=input_encoded.reindex(columns=X.columns,fill_value=0)
-
-    if st.button("Predict Price"):
-        pred=model_ml.predict(input_encoded)[0]
-        st.success(f"💰 Estimated Price: ₹ {int(pred)}")
-        st.info(f"📊 Range: ₹ {int(pred*0.9)} - ₹ {int(pred*1.1)}")
-
-# ==============================
-# TAB 2 (COMPARE)
-# ==============================
-
-with tab2:
-    st.subheader("Compare Two Cars")
-
-    colA, colB = st.columns(2)
-
-    def get_input(col, key):
-        brand = col.selectbox("Brand", brands, key=key+"b")
-        model_name = col.selectbox("Model", models[brand], key=key+"m")
-
-        year = col.slider("Year", 2010, 2025, 2020, key=key+"y")
-        km = col.number_input("KM", 0, 200000, 50000, key=key+"k")
-
-        mileage = col.number_input("Mileage", 10.0, 30.0, 18.0, key=key+"mi")
-        engine = col.number_input("Engine", 800, 2500, 1200, key=key+"e")
-
-        insurance = col.selectbox("Insurance", [0,1], key=key+"i")
-        transmission = col.selectbox("Transmission", transmissions, key=key+"t")
-        fuel = col.selectbox("Fuel", fuel_types, key=key+"f")
-
-        df=pd.DataFrame([{
-            'brand':brand,'model':model_name,'year':year,'km':km,
-            'mileage':mileage,'engine':engine,'insurance':insurance,
-            'transmission':transmission,'fuel':fuel
-        }])
-
-        df=pd.get_dummies(df)
-        df=df.reindex(columns=X.columns,fill_value=0)
-
-        return df
-
-    input1=get_input(colA,"A")
-    input2=get_input(colB,"B")
-
-    if st.button("Compare"):
-        p1=model_ml.predict(input1)[0]
-        p2=model_ml.predict(input2)[0]
-
-        colA.success(f"₹ {int(p1)}")
-        colB.success(f"₹ {int(p2)}")
+    st.success(f"💰 Estimated Price: ₹ {int(pred)}")
+    st.info(f"📊 Range: ₹ {int(pred*0.9)} - ₹ {int(pred*1.1)}")
