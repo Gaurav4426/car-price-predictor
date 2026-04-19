@@ -5,50 +5,35 @@ from sklearn.ensemble import RandomForestRegressor
 
 np.random.seed(42)
 
-# ==============================
-# PAGE CONFIG (UI UPGRADE)
-# ==============================
 st.set_page_config(page_title="Car Price Predictor", page_icon="🚗")
-
 st.title("🚗 Second-Hand Car Price Predictor")
-st.markdown("### Smart AI-based price estimation")
 
 # ==============================
 # BRAND + MODELS
 # ==============================
 
 brand_models = {
-    'Maruti Suzuki': ['Alto', 'Swift', 'Baleno', 'Dzire', 'Brezza', 'Ertiga'],
-    'Hyundai': ['i10', 'i20', 'Aura', 'Creta', 'Venue'],
-    'Tata': ['Tiago', 'Punch', 'Nexon', 'Harrier'],
-    'Mahindra': ['Bolero', 'Scorpio', 'XUV700'],
-    'Kia': ['Sonet', 'Seltos']
+    'Maruti Suzuki': ['Alto', 'Swift', 'Baleno', 'Dzire', 'Brezza', 'Ertiga', 'WagonR'],
+    'Hyundai': ['i10', 'i20', 'Aura', 'Verna', 'Creta', 'Venue'],
+    'Tata': ['Tiago', 'Punch', 'Nexon', 'Harrier', 'Safari'],
+    'Mahindra': ['Bolero', 'Scorpio', 'XUV300', 'XUV700'],
+    'Kia': ['Sonet', 'Seltos', 'Carens']
 }
 
 # ==============================
-# IMAGE LINKS (simple demo)
-# ==============================
-
-car_images = {
-    'Swift': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/159099/swift-exterior-right-front-three-quarter.jpeg',
-    'Baleno': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/146183/baleno-exterior-right-front-three-quarter.jpeg',
-    'Creta': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/131825/creta-exterior-right-front-three-quarter.jpeg',
-    'Punch': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/39015/punch-exterior-right-front-three-quarter.jpeg',
-    'Scorpio': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/124839/scorpio-n-exterior-right-front-three-quarter.jpeg',
-    'Seltos': 'https://imgd.aeplcdn.com/664x374/n/cw/ec/134287/seltos-exterior-right-front-three-quarter.jpeg'
-}
-
-# ==============================
-# PRICE BASE
+# BASE PRICES
 # ==============================
 
 new_car_price = {
-    'Swift': 700000, 'Baleno': 800000, 'Alto': 400000,
-    'Dzire': 750000, 'Brezza': 900000, 'Ertiga': 1100000,
-    'Creta': 1500000, 'Venue': 900000, 'Aura': 700000,
-    'Punch': 1100000, 'Nexon': 900000, 'Harrier': 1800000,
-    'Bolero': 1000000, 'Scorpio': 1800000, 'XUV700': 2500000,
-    'Sonet': 900000, 'Seltos': 1400000
+    'Alto': 400000, 'Swift': 700000, 'Baleno': 800000,
+    'Dzire': 750000, 'Brezza': 900000, 'Ertiga': 1100000, 'WagonR': 600000,
+    'i10': 600000, 'i20': 800000, 'Aura': 700000,
+    'Verna': 1300000, 'Creta': 1500000, 'Venue': 900000,
+    'Tiago': 500000, 'Punch': 1100000, 'Nexon': 900000,
+    'Harrier': 1800000, 'Safari': 2000000,
+    'Bolero': 1000000, 'Scorpio': 1800000,
+    'XUV300': 1200000, 'XUV700': 2500000,
+    'Sonet': 900000, 'Seltos': 1400000, 'Carens': 1200000
 }
 
 fuel_types = ['Petrol', 'Diesel', 'Petrol+CNG']
@@ -60,7 +45,7 @@ transmissions = ['Manual', 'Automatic']
 
 data = []
 
-for _ in range(200):
+for _ in range(300):
     brand = np.random.choice(list(brand_models.keys()))
     model = np.random.choice(brand_models[brand])
 
@@ -91,14 +76,17 @@ for _ in range(200):
 
     if transmission == 'Automatic':
         price += 10000
+
     if fuel == 'Petrol+CNG':
         price += 20000
 
     price = min(price, base_price)
     price = max(price, 50000)
 
-    data.append([brand, model, year, km, mileage, engine,
-                 insurance, transmission, fuel, price])
+    data.append([
+        brand, model, year, km, mileage, engine,
+        insurance, transmission, fuel, price
+    ])
 
 df = pd.DataFrame(data, columns=[
     'brand','model','year','km','mileage','engine',
@@ -106,16 +94,24 @@ df = pd.DataFrame(data, columns=[
 ])
 
 # ==============================
-# MODEL
+# FIXED ENCODING (ERROR SOLVED)
 # ==============================
 
 df_encoded = df.copy()
+
 for col in df_encoded.columns:
     if df_encoded[col].dtype == 'object':
         df_encoded[col] = df_encoded[col].astype('category').cat.codes
 
-X = df_encoded.drop('price', axis=1)
-y = df_encoded['price']
+df_encoded = df_encoded.replace([np.inf, -np.inf], np.nan)
+df_encoded = df_encoded.dropna()
+
+X = df_encoded.drop('price', axis=1).astype(float)
+y = df_encoded['price'].astype(float)
+
+# ==============================
+# MODEL
+# ==============================
 
 model_ml = RandomForestRegressor(n_estimators=100, random_state=42)
 model_ml.fit(X, y)
@@ -126,10 +122,6 @@ model_ml.fit(X, y)
 
 brand = st.selectbox("Select Brand", list(brand_models.keys()))
 model_name = st.selectbox("Select Model", brand_models[brand])
-
-# Show image
-if model_name in car_images:
-    st.image(car_images[model_name], width=350)
 
 year = st.slider("Year", 2010, 2025, 2020)
 km = st.number_input("KM Driven", 0, 200000, 50000)
@@ -156,7 +148,7 @@ input_data = {
     'fuel': fuel_types.index(fuel)
 }
 
-input_df = pd.DataFrame([input_data])
+input_df = pd.DataFrame([input_data]).astype(float)
 
 if st.button("Predict Price"):
     pred = model_ml.predict(input_df)[0]
