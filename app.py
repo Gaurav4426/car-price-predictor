@@ -8,7 +8,7 @@ np.random.seed(42)
 st.set_page_config(page_title="Car Price Predictor", page_icon="🚗", layout="wide")
 
 st.title("🚗 Car Price Prediction System")
-st.markdown("### AI-based Used Car Valuation (Normal + Luxury)")
+st.markdown("### AI-based Used Car Valuation with Auto Images & Comparison")
 
 # ==============================
 # BRANDS + MODELS
@@ -31,7 +31,7 @@ models = {
 }
 
 # ==============================
-# BASE PRICE
+# BASE PRICES
 # ==============================
 
 base_price_dict = {
@@ -94,7 +94,7 @@ df=pd.DataFrame(data,columns=[
 ])
 
 # ==============================
-# ENCODING (SAFE)
+# ENCODING
 # ==============================
 
 df_encoded = pd.get_dummies(df)
@@ -109,18 +109,16 @@ model_ml = RandomForestRegressor(n_estimators=100, random_state=42)
 model_ml.fit(X, y)
 
 # ==============================
-# CAR IMAGES
+# AUTO IMAGE FUNCTION
 # ==============================
 
-images={
-'Swift':"https://imgd.aeplcdn.com/664x374/n/cw/ec/159099/swift.jpeg",
-'Baleno':"https://imgd.aeplcdn.com/664x374/n/cw/ec/146183/baleno.jpeg",
-'Creta':"https://imgd.aeplcdn.com/664x374/n/cw/ec/131825/creta.jpeg",
-'Punch':"https://imgd.aeplcdn.com/664x374/n/cw/ec/39015/punch.jpeg",
-'3 Series':"https://imgd.aeplcdn.com/664x374/n/cw/ec/192443/3series.jpeg",
-'A4':"https://imgd.aeplcdn.com/664x374/n/cw/ec/39445/a4.jpeg",
-'Macan':"https://imgd.aeplcdn.com/664x374/n/cw/ec/39232/macan.jpeg"
-}
+def get_car_images(brand, model):
+    query = f"{brand} {model} car"
+    return [
+        f"https://source.unsplash.com/600x400/?{query.replace(' ', ',')}",
+        f"https://source.unsplash.com/600x400/?car,{model}",
+        f"https://source.unsplash.com/600x400/?car,{brand}"
+    ]
 
 # ==============================
 # TABS
@@ -129,7 +127,7 @@ images={
 tab1, tab2 = st.tabs(["🔍 Predict Price", "⚖️ Compare Cars"])
 
 # ==============================
-# PREDICT TAB
+# TAB 1
 # ==============================
 
 with tab1:
@@ -139,8 +137,14 @@ with tab1:
         brand = st.selectbox("Brand", brands)
         model_name = st.selectbox("Model", models[brand])
 
-        if model_name in images:
-            st.image(images[model_name], width=300)
+        st.subheader("🚗 Car Preview")
+
+        with st.spinner("Loading images..."):
+            image_urls = get_car_images(brand, model_name)
+
+        img_cols = st.columns(3)
+        for i, url in enumerate(image_urls):
+            img_cols[i].image(url, use_container_width=True)
 
     with col2:
         year = st.slider("Year", 2010, 2025, 2020)
@@ -173,7 +177,7 @@ with tab1:
         st.info(f"📊 Range: ₹ {int(pred*0.9)} - ₹ {int(pred*1.1)}")
 
 # ==============================
-# COMPARE TAB
+# TAB 2 (COMPARE)
 # ==============================
 
 with tab2:
