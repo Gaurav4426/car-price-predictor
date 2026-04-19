@@ -94,30 +94,26 @@ df = pd.DataFrame(data, columns=[
 ])
 
 # ==============================
-# FIXED ENCODING (ERROR SOLVED)
+# ONE-HOT ENCODING (FINAL FIX)
 # ==============================
 
-df_encoded = df.copy()
-
-for col in df_encoded.columns:
-    if df_encoded[col].dtype == 'object':
-        df_encoded[col] = df_encoded[col].astype('category').cat.codes
+df_encoded = pd.get_dummies(df, drop_first=True)
 
 df_encoded = df_encoded.replace([np.inf, -np.inf], np.nan)
 df_encoded = df_encoded.dropna()
 
-X = df_encoded.drop('price', axis=1).astype(float)
-y = df_encoded['price'].astype(float)
+X = df_encoded.drop('price', axis=1)
+y = df_encoded['price']
 
 # ==============================
-# MODEL
+# MODEL TRAINING
 # ==============================
 
 model_ml = RandomForestRegressor(n_estimators=100, random_state=42)
 model_ml.fit(X, y)
 
 # ==============================
-# UI INPUT
+# USER INPUT UI
 # ==============================
 
 brand = st.selectbox("Select Brand", list(brand_models.keys()))
@@ -136,20 +132,31 @@ fuel = st.selectbox("Fuel Type", fuel_types)
 # PREDICTION
 # ==============================
 
-input_data = {
-    'brand': list(brand_models.keys()).index(brand),
-    'model': brand_models[brand].index(model_name),
-    'year': year,
-    'km': km,
-    'mileage': mileage,
-    'engine': engine,
-    'insurance': insurance,
-    'transmission': transmissions.index(transmission),
-    'fuel': fuel_types.index(fuel)
-}
+# Create empty row
+input_df = pd.DataFrame(columns=X.columns)
+input_df.loc[0] = 0
 
-input_df = pd.DataFrame([input_data]).astype(float)
+# Fill numeric values
+input_df['year'] = year
+input_df['km'] = km
+input_df['mileage'] = mileage
+input_df['engine'] = engine
+input_df['insurance'] = insurance
 
+# Fill one-hot encoded values
+if f'brand_{brand}' in input_df.columns:
+    input_df[f'brand_{brand}'] = 1
+
+if f'model_{model_name}' in input_df.columns:
+    input_df[f'model_{model_name}'] = 1
+
+if f'transmission_{transmission}' in input_df.columns:
+    input_df[f'transmission_{transmission}'] = 1
+
+if f'fuel_{fuel}' in input_df.columns:
+    input_df[f'fuel_{fuel}'] = 1
+
+# Predict
 if st.button("Predict Price"):
     pred = model_ml.predict(input_df)[0]
 
