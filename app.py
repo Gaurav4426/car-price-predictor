@@ -6,159 +6,146 @@ from sklearn.ensemble import RandomForestRegressor
 np.random.seed(42)
 
 st.set_page_config(page_title="Car Price Predictor", page_icon="🚗")
-st.title("🚗 Second-Hand Car Price Predictor")
+st.title("🚗 Car Price Prediction System")
 
 # ==============================
-# BRAND + MODELS
+# DATA GENERATION (SAME AS YOUR CODE)
 # ==============================
 
-brand_models = {
-    'Maruti Suzuki': ['Alto', 'Swift', 'Baleno', 'Dzire', 'Brezza', 'Ertiga', 'WagonR'],
-    'Hyundai': ['i10', 'i20', 'Aura', 'Verna', 'Creta', 'Venue'],
-    'Tata': ['Tiago', 'Punch', 'Nexon', 'Harrier', 'Safari'],
-    'Mahindra': ['Bolero', 'Scorpio', 'XUV300', 'XUV700'],
-    'Kia': ['Sonet', 'Seltos', 'Carens']
+data=[]
+
+brands_sh=['Maruti','Hyundai','Tata','Honda','Toyota']
+
+models_sh = {
+'Maruti':['Swift','Baleno','WagonR','Dzire','Brezza'],
+'Hyundai':['i20','Creta','Venue','Verna','Grand i10'],
+'Tata':['Nexon','Punch','Harrier','Tiago','Altroz'],
+'Honda':['City','Amaze','Jazz','WRV','Civic'],
+'Toyota':['Innova','Fortuner','Glanza','Etios','Corolla']
 }
 
-# ==============================
-# BASE PRICES
-# ==============================
-
-new_car_price = {
-    'Alto': 400000, 'Swift': 700000, 'Baleno': 800000,
-    'Dzire': 750000, 'Brezza': 900000, 'Ertiga': 1100000, 'WagonR': 600000,
-    'i10': 600000, 'i20': 800000, 'Aura': 700000,
-    'Verna': 1300000, 'Creta': 1500000, 'Venue': 900000,
-    'Tiago': 500000, 'Punch': 1100000, 'Nexon': 900000,
-    'Harrier': 1800000, 'Safari': 2000000,
-    'Bolero': 1000000, 'Scorpio': 1800000,
-    'XUV300': 1200000, 'XUV700': 2500000,
-    'Sonet': 900000, 'Seltos': 1400000, 'Carens': 1200000
+model_price_sh = {
+'Swift':600000,'Baleno':750000,'WagonR':550000,'Dzire':700000,'Brezza':900000,
+'i20':800000,'Creta':1500000,'Venue':1200000,'Verna':1400000,'Grand i10':650000,
+'Nexon':1100000,'Punch':850000,'Harrier':1900000,'Tiago':600000,'Altroz':850000,
+'City':1300000,'Amaze':850000,'Jazz':900000,'WRV':1100000,'Civic':1800000,
+'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000
 }
 
-fuel_types = ['Petrol', 'Diesel', 'Petrol+CNG']
-transmissions = ['Manual', 'Automatic']
+fuel_sh=['Petrol','Diesel','Petrol+CNG','Electric']
+trans_sh=['Manual','Automatic']
 
-# ==============================
-# DATA GENERATION
-# ==============================
+for _ in range(150):
+    brand=np.random.choice(brands_sh)
+    model=np.random.choice(models_sh[brand])
 
-data = []
+    year=np.random.randint(2010,2027)
+    km=np.random.randint(5000,180000)
+    mileage=np.random.uniform(10,25)
+    engine=np.random.randint(800,2500)
 
-for _ in range(300):
-    brand = np.random.choice(list(brand_models.keys()))
-    model = np.random.choice(brand_models[brand])
+    insurance=np.random.choice([0,1])
+    transmission=np.random.choice(trans_sh)
+    fuel=np.random.choice(fuel_sh)
 
-    year = np.random.randint(2010, 2026)
-    km = np.random.randint(5000, 150000)
-    mileage = np.random.uniform(12, 25)
-    engine = np.random.randint(800, 2000)
-    insurance = np.random.choice([0, 1])
-    transmission = np.random.choice(transmissions)
-    fuel = np.random.choice(fuel_types)
+    base_price=model_price_sh[model]
 
-    base_price = new_car_price.get(model, 800000)
+    age_penalty=(2026-year)*40000
+    km_penalty=km*3
 
-    age = 2026 - year
-    if age == 0:
-        price = base_price
-    elif age == 1:
-        price = base_price * 0.90
-    elif age == 2:
-        price = base_price * 0.80
-    else:
-        price = base_price * 0.80 * (0.90 ** (age - 2))
+    price=(
+        base_price
+        -age_penalty
+        -km_penalty
+        +(25000 if transmission=='Automatic' else 0)
+        +(60000 if fuel=='Electric' else 20000 if fuel=='Petrol+CNG' else 0)
+        +insurance*20000
+        +engine*4
+        +mileage*2000
+    )
 
-    price -= km * 0.8
-    price += engine * 1.5
-    price += mileage * 500
-    price += insurance * 8000
-
-    if transmission == 'Automatic':
-        price += 10000
-
-    if fuel == 'Petrol+CNG':
-        price += 20000
-
-    price = min(price, base_price)
-    price = max(price, 50000)
+    price=max(price,50000)
 
     data.append([
-        brand, model, year, km, mileage, engine,
-        insurance, transmission, fuel, price
+        0,brand,model,year,km,mileage,engine,
+        insurance,transmission,fuel,
+        0,0,0,0,'Black','No',price
     ])
 
-df = pd.DataFrame(data, columns=[
-    'brand','model','year','km','mileage','engine',
-    'insurance','transmission','fuel','price'
-])
-
 # ==============================
-# ONE-HOT ENCODING (FINAL FIX)
+# DATAFRAME + ENCODING
 # ==============================
 
-df_encoded = pd.get_dummies(df, drop_first=True)
+columns=[
+'car_type','brand','model','year','km_driven','mileage','engine_cc',
+'insurance','transmission','fuel_type',
+'engine_power','interior','safety','custom_paint',
+'color','sunroof','price'
+]
 
-df_encoded = df_encoded.replace([np.inf, -np.inf], np.nan)
-df_encoded = df_encoded.dropna()
+df=pd.DataFrame(data,columns=columns)
 
-X = df_encoded.drop('price', axis=1)
-y = df_encoded['price']
+df_encoded=df.copy()
+
+for col in df_encoded.columns:
+    if df_encoded[col].dtype=='object':
+        df_encoded[col]=df_encoded[col].astype('category').cat.codes
+
+X=df_encoded.drop('price',axis=1)
+y=df_encoded['price']
+
+model=RandomForestRegressor(n_estimators=100,random_state=42)
+model.fit(X,y)
 
 # ==============================
-# MODEL TRAINING
+# UI
 # ==============================
 
-model_ml = RandomForestRegressor(n_estimators=100, random_state=42)
-model_ml.fit(X, y)
+st.subheader("Select Car Details")
 
-# ==============================
-# USER INPUT UI
-# ==============================
+brand = st.selectbox("Brand", brands_sh)
+model_name = st.selectbox("Model", models_sh[brand])
 
-brand = st.selectbox("Select Brand", list(brand_models.keys()))
-model_name = st.selectbox("Select Model", brand_models[brand])
-
-year = st.slider("Year", 2010, 2025, 2020)
+year = st.slider("Year", 2010, 2026, 2020)
 km = st.number_input("KM Driven", 0, 200000, 50000)
 mileage = st.number_input("Mileage", 10.0, 30.0, 18.0)
-engine = st.number_input("Engine CC", 800, 2000, 1200)
+engine = st.number_input("Engine CC", 800, 2500, 1200)
 
 insurance = st.selectbox("Insurance", [0,1])
-transmission = st.selectbox("Transmission", transmissions)
-fuel = st.selectbox("Fuel Type", fuel_types)
+transmission = st.selectbox("Transmission", trans_sh)
+fuel = st.selectbox("Fuel Type", fuel_sh)
+
+# ==============================
+# ENCODING INPUT (IMPORTANT)
+# ==============================
+
+brand_code = brands_sh.index(brand)
+model_code = models_sh[brand].index(model_name)
+trans_code = trans_sh.index(transmission)
+fuel_code = fuel_sh.index(fuel)
+
+input_data=[
+    0,
+    brand_code,
+    model_code,
+    year,
+    km,
+    mileage,
+    engine,
+    insurance,
+    trans_code,
+    fuel_code,
+    0,0,0,0,0,0
+]
+
+input_df=pd.DataFrame([input_data],columns=X.columns)
 
 # ==============================
 # PREDICTION
 # ==============================
 
-# Create empty row
-input_df = pd.DataFrame(columns=X.columns)
-input_df.loc[0] = 0
-
-# Fill numeric values
-input_df['year'] = year
-input_df['km'] = km
-input_df['mileage'] = mileage
-input_df['engine'] = engine
-input_df['insurance'] = insurance
-
-# Fill one-hot encoded values
-if f'brand_{brand}' in input_df.columns:
-    input_df[f'brand_{brand}'] = 1
-
-if f'model_{model_name}' in input_df.columns:
-    input_df[f'model_{model_name}'] = 1
-
-if f'transmission_{transmission}' in input_df.columns:
-    input_df[f'transmission_{transmission}'] = 1
-
-if f'fuel_{fuel}' in input_df.columns:
-    input_df[f'fuel_{fuel}'] = 1
-
-# Predict
 if st.button("Predict Price"):
-    pred = model_ml.predict(input_df)[0]
+    pred=model.predict(input_df)[0]
 
     st.success(f"💰 Estimated Price: ₹ {int(pred)}")
     st.info(f"📊 Range: ₹ {int(pred*0.9)} - ₹ {int(pred*1.1)}")
