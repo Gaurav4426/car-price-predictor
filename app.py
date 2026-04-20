@@ -44,8 +44,10 @@ base_price_dict = {
 'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000,
 
 # Mahindra
-'Thar':1500000,'Scorpio':1400000,'XUV700':1800000,'Bolero':900000,'XUV300':1200000,'XEV BE 6':2500000,
+'Thar':1500000,'Scorpio':1400000,'XUV700':1800000,'Bolero':900000,'XUV300':1200000,
+'XEV BE 6':2500000,
 
+# Luxury
 '3 Series':6000000,'5 Series':9000000,'X1':4500000,
 'A4':5500000,'A6':8000000,'Q3':4500000,
 'Macan':9000000,'Cayenne':15000000
@@ -66,7 +68,7 @@ for _ in range(300):
 
     year=np.random.randint(2010,2026)
     km=np.random.randint(5000,180000)
-    mileage=np.random.uniform(1,30)   # CHANGED HERE
+    mileage=np.random.uniform(1,30)
     engine=np.random.randint(800,2500)
 
     insurance=np.random.choice([0,1])
@@ -100,7 +102,7 @@ df=pd.DataFrame(data,columns=[
 ])
 
 # ==============================
-# ENCODING (SAFE)
+# ENCODING
 # ==============================
 
 df_encoded = pd.get_dummies(df)
@@ -151,12 +153,19 @@ with tab1:
     with col2:
         year = st.slider("Year", 2010, 2025, 2020)
         km = st.number_input("KM Driven", 0, 200000, 50000)
-        mileage = st.number_input("Mileage", 1.0, 30.0, 18.0)  # CHANGED HERE
-        engine = st.number_input("Engine CC", 800, 2500, 1200)
+        mileage = st.number_input("Mileage", 1.0, 30.0, 18.0)
+
+        fuel = st.selectbox("Fuel Type", fuel_types)
+
+        if fuel == 'Electric':
+            battery = st.number_input("Battery Capacity (kWh)", 10, 150, 40)
+            engine = 0
+        else:
+            engine = st.number_input("Engine CC", 800, 2500, 1200)
+            battery = 0
 
         insurance = st.selectbox("Insurance", [0,1])
         transmission = st.selectbox("Transmission", transmissions)
-        fuel = st.selectbox("Fuel Type", fuel_types)
 
     input_df=pd.DataFrame([{
         'brand':brand,
@@ -194,17 +203,24 @@ with tab2:
         year = col.slider("Year", 2010, 2025, 2020, key=key+"y")
         km = col.number_input("KM", 0, 200000, 50000, key=key+"k")
 
-        mileage = col.number_input("Mileage", 1.0, 30.0, 18.0, key=key+"mi")  # CHANGED HERE
-        engine = col.number_input("Engine", 800, 2500, 1200, key=key+"e")
+        mileage = col.number_input("Mileage", 1.0, 30.0, 18.0, key=key+"mi")
+
+        fuel = col.selectbox("Fuel", fuel_types, key=key+"f")
+
+        if fuel == 'Electric':
+            battery = col.number_input("Battery (kWh)", 10, 150, 40, key=key+"batt")
+            engine = 0
+        else:
+            engine = col.number_input("Engine", 800, 2500, 1200, key=key+"e")
+            battery = 0
 
         insurance = col.selectbox("Insurance", [0,1], key=key+"i")
         transmission = col.selectbox("Transmission", transmissions, key=key+"t")
-        fuel = col.selectbox("Fuel", fuel_types, key=key+"f")
 
         df=pd.DataFrame([{
             'brand':brand,'model':model_name,'year':year,'km':km,
-            'mileage':mileage,'engine':engine,'insurance':insurance,
-            'transmission':transmission,'fuel':fuel
+            'mileage':mileage,'engine':engine,
+            'insurance':insurance,'transmission':transmission,'fuel':fuel
         }])
 
         df=pd.get_dummies(df)
