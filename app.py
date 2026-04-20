@@ -16,6 +16,7 @@ st.markdown("### AI-based Used Car Valuation (Normal + Luxury)")
 
 brands = [
     'Maruti','Hyundai','Tata','Honda','Toyota',
+    'Mahindra',
     'BMW','Audi','Porsche'
 ]
 
@@ -25,6 +26,7 @@ models = {
 'Tata':['Nexon','Punch','Harrier','Tiago','Altroz'],
 'Honda':['City','Amaze','Jazz','WRV','Civic'],
 'Toyota':['Innova','Fortuner','Glanza','Etios','Corolla'],
+'Mahindra':['Thar','Scorpio','XUV700','Bolero','XUV300'],
 'BMW':['3 Series','5 Series','X1'],
 'Audi':['A4','A6','Q3'],
 'Porsche':['Macan','Cayenne']
@@ -40,6 +42,10 @@ base_price_dict = {
 'Nexon':1100000,'Punch':850000,'Harrier':1900000,'Tiago':600000,'Altroz':850000,
 'City':1300000,'Amaze':850000,'Jazz':900000,'WRV':1100000,'Civic':1800000,
 'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000,
+
+# Mahindra
+'Thar':1500000,'Scorpio':1400000,'XUV700':1800000,'Bolero':900000,'XUV300':1200000,
+
 '3 Series':6000000,'5 Series':9000000,'X1':4500000,
 'A4':5500000,'A6':8000000,'Q3':4500000,
 'Macan':9000000,'Cayenne':15000000
@@ -60,7 +66,7 @@ for _ in range(300):
 
     year=np.random.randint(2010,2026)
     km=np.random.randint(5000,180000)
-    mileage=np.random.uniform(10,25)
+    mileage=np.random.uniform(1,30)   # CHANGED HERE
     engine=np.random.randint(800,2500)
 
     insurance=np.random.choice([0,1])
@@ -145,7 +151,7 @@ with tab1:
     with col2:
         year = st.slider("Year", 2010, 2025, 2020)
         km = st.number_input("KM Driven", 0, 200000, 50000)
-        mileage = st.number_input("Mileage", 10.0, 30.0, 18.0)
+        mileage = st.number_input("Mileage", 1.0, 30.0, 18.0)  # CHANGED HERE
         engine = st.number_input("Engine CC", 800, 2500, 1200)
 
         insurance = st.selectbox("Insurance", [0,1])
@@ -188,7 +194,7 @@ with tab2:
         year = col.slider("Year", 2010, 2025, 2020, key=key+"y")
         km = col.number_input("KM", 0, 200000, 50000, key=key+"k")
 
-        mileage = col.number_input("Mileage", 10.0, 30.0, 18.0, key=key+"mi")
+        mileage = col.number_input("Mileage", 1.0, 30.0, 18.0, key=key+"mi")  # CHANGED HERE
         engine = col.number_input("Engine", 800, 2500, 1200, key=key+"e")
 
         insurance = col.selectbox("Insurance", [0,1], key=key+"i")
