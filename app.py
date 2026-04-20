@@ -26,7 +26,7 @@ models = {
 'Tata':['Nexon','Punch','Harrier','Tiago','Altroz'],
 'Honda':['City','Amaze','Jazz','WRV','Civic'],
 'Toyota':['Innova','Fortuner','Glanza','Etios','Corolla'],
-'Mahindra':['Thar','Scorpio','XUV700','Bolero','XUV300'],
+'Mahindra':['Thar','Scorpio','XUV700','Bolero','XUV300','XEV BE 6'],
 'BMW':['3 Series','5 Series','X1'],
 'Audi':['A4','A6','Q3'],
 'Porsche':['Macan','Cayenne']
@@ -44,7 +44,7 @@ base_price_dict = {
 'Innova':2200000,'Fortuner':3500000,'Glanza':800000,'Etios':700000,'Corolla':1700000,
 
 # Mahindra
-'Thar':1500000,'Scorpio':1400000,'XUV700':1800000,'Bolero':900000,'XUV300':1200000,
+'Thar':1500000,'Scorpio':1400000,'XUV700':1800000,'Bolero':900000,'XUV300':1200000,'XEV BE 6':2500000,
 
 '3 Series':6000000,'5 Series':9000000,'X1':4500000,
 'A4':5500000,'A6':8000000,'Q3':4500000,
